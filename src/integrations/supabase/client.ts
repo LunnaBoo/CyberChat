@@ -33,16 +33,28 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+function serverEnv(name: string): string {
+  if (typeof process === "undefined") return "";
+  return (process.env as Record<string, string | undefined>)[name] ?? "";
+}
+
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
+  // An empty, "auto", or "/" VITE_SUPABASE_URL makes the client use its own
+  // origin and reach Supabase through a same-origin proxy (Vite in dev, nginx
+  // in the Docker build). This avoids cross-origin preflights and ngrok's
+  // free-tier browser interstitial.
+  const ENV_URL =
+    import.meta.env.VITE_SUPABASE_URL || serverEnv("SUPABASE_URL");
+  const SAME_ORIGIN = !ENV_URL || ENV_URL === "auto" || ENV_URL === "/";
   const SUPABASE_URL =
-    import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    SAME_ORIGIN && typeof window !== "undefined"
+      ? window.location.origin
+      : ENV_URL;
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_PUBLISHABLE_KEY;
+    serverEnv("SUPABASE_PUBLISHABLE_KEY");
   const SUPABASE_ANON_KEY =
-    import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    import.meta.env.VITE_SUPABASE_ANON_KEY || serverEnv("SUPABASE_ANON_KEY");
   const SUPABASE_KEY = SUPABASE_PUBLISHABLE_KEY || SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {

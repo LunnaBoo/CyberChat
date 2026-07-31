@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -68,8 +69,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [modal, setModal] = useState<ModalKind>({ kind: "none" });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const reloadInFlight = useRef<Promise<void> | null>(null);
+  const openingDm = useRef<string | null>(null);
 
-  const reloadConversations = useCallback(async () => {
+  const doReload = useCallback(async () => {
     if (!myNpub) {
       setConversations([]);
       return;
@@ -121,6 +124,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setConversations(summaries);
   }, [myNpub]);
 
+  const reloadConversations = useCallback(async () => {
+    if (!myNpub) {
+      setConversations([]);
+      return;
+    }
+    if (reloadInFlight.current) return reloadInFlight.current;
+    reloadInFlight.current = doReload().finally(() => {
+      reloadInFlight.current = null;
+    });
+    return reloadInFlight.current;
+  }, [myNpub, doReload]);
+
   useEffect(() => {
     void reloadConversations();
   }, [reloadConversations]);
@@ -160,7 +175,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "conversation_participants" },
-        () => void reloadConversations(),
+        (payload) => {
+          if (
+            payload.eventType === "INSERT" ||
+            payload.eventType === "DELETE"
+          ) {
+            void reloadConversations();
+          }
+        },
       )
       .subscribe();
 
@@ -230,13 +252,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const startDm = useCallback(
     async (npub: string) => {
-      if (!myNpub) return;
-      const { data } = await supabase.rpc("get_or_create_dm", {
-        npub_a: myNpub,
-        npub_b: npub,
-      });
-      await reloadConversations();
-      if (data) openConversation(data as string);
+      if (!myNpub || openingDm.current === npub) return;
+      openingDm.current = npub;
+      try {
+        const { data } = await supabase.rpc("get_or_create_dm", {
+          npub_a: myNpub,
+          npub_b: npub,
+        });
+        if (!data) return;
+        openConversation(data as string);
+        await reloadConversations();
+      } finally {
+        openingDm.current = null;
+      }
     },
     [myNpub, reloadConversations, openConversation],
   );

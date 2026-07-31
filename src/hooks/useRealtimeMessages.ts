@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Message } from "@/lib/types";
 
@@ -13,6 +13,7 @@ export function useRealtimeMessages(conversationId: string | null) {
     }
     let cancelled = false;
     setLoading(true);
+    setMessages([]);
 
     supabase
       .from("messages")
@@ -63,5 +64,11 @@ export function useRealtimeMessages(conversationId: string | null) {
     };
   }, [conversationId]);
 
-  return { messages, loading };
+  const append = useCallback((row: Message) => {
+    setMessages((prev) =>
+      prev.some((m) => m.id === row.id) ? prev : [...prev, row],
+    );
+  }, []);
+
+  return { messages, loading, append };
 }

@@ -18,4 +18,24 @@ export default defineConfig({
   },
   // The app is a pure client-side SPA; there is no nitro server runtime to deploy.
   nitro: false,
+  vite: {
+    server: {
+      // Allow ngrok's random *.ngrok-free.app host header through the dev server
+      // (Vite 8 rejects unknown hosts by default).
+      allowedHosts: true,
+      // Same-origin API: proxy Supabase (local instance on :54321) so the
+      // browser never makes cross-origin requests. Avoids ngrok's free-tier
+      // browser interstitial (ERR_NGROK_6024) and CORS preflight overhead.
+      proxy: {
+        "/rest": { target: "http://127.0.0.1:54321", changeOrigin: true },
+        "/realtime": {
+          target: "http://127.0.0.1:54321",
+          changeOrigin: true,
+          ws: true,
+        },
+        "/auth": { target: "http://127.0.0.1:54321", changeOrigin: true },
+        "/storage": { target: "http://127.0.0.1:54321", changeOrigin: true },
+      },
+    },
+  },
 });

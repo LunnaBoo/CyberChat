@@ -74,7 +74,9 @@ export function ContactList({ filter }: { filter: string }) {
                   onClick={() => void contacts.sendRequest(p.npub)}
                   className="text-xs text-accent hover:underline"
                 >
-                  {contacts.outgoing.includes(p.npub) ? "sent" : "+add"}
+                  {contacts.outgoing.some((o) => o.npub === p.npub)
+                    ? "sent"
+                    : "+add"}
                 </button>
                 <button
                   onClick={() => void startDm(p.npub)}

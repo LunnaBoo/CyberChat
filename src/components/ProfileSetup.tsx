@@ -19,6 +19,7 @@ export function ProfileSetup({
 
   async function submit() {
     setBusy(true);
+    setError(null);
     const { data, error: err } = await supabase
       .from("profiles")
       .insert({
@@ -32,6 +33,16 @@ export function ProfileSetup({
       .single();
     setBusy(false);
     if (err) {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("npub", identity.npub)
+        .maybeSingle();
+      if (existing) {
+        authStore.signIn(identity);
+        authStore.setProfile(existing as Profile);
+        return;
+      }
       setError(err.message);
       return;
     }
@@ -50,6 +61,7 @@ export function ProfileSetup({
         <Field label="display name">
           <input
             autoFocus
+            autoComplete="off"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Thomas A."

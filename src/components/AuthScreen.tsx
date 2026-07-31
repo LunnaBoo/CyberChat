@@ -42,12 +42,16 @@ export function AuthScreen() {
   async function proceed(identity: Identity) {
     setBusy(true);
     setError(null);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("npub", identity.npub)
       .maybeSingle();
     setBusy(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
     if (data) {
       authStore.signIn(identity);
       authStore.setProfile(data as Profile);
@@ -131,6 +135,7 @@ export function AuthScreen() {
                 <span className="text-dim">nsec&gt;</span>
                 <input
                   autoFocus
+                  autoComplete="off"
                   type={reveal ? "text" : "password"}
                   value={nsecInput}
                   onChange={(e) => setNsecInput(e.target.value)}

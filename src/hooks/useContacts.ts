@@ -5,7 +5,7 @@ import type { FriendRequest, Profile } from "@/lib/types";
 export function useContacts(myNpub: string | null) {
   const [contacts, setContacts] = useState<Profile[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
-  const [outgoing, setOutgoing] = useState<string[]>([]);
+  const [outgoing, setOutgoing] = useState<Profile[]>([]);
 
   const load = useCallback(async () => {
     if (!myNpub) {
@@ -25,25 +25,36 @@ export function useContacts(myNpub: string | null) {
 
     setRequests((reqs ?? []) as FriendRequest[]);
 
-    const accepted = (links ?? []).filter((l) => l.status === "accepted");
-    const npubs = accepted.map((l) =>
-      l.user_npub === myNpub ? l.friend_npub : l.user_npub,
-    );
-    setOutgoing(
-      (links ?? [])
-        .filter((l) => l.status === "pending" && l.user_npub === myNpub)
-        .map((l) => l.friend_npub),
-    );
+    const acceptedNpubs = (links ?? [])
+      .filter((l) => l.status === "accepted")
+      .map((l) => (l.user_npub === myNpub ? l.friend_npub : l.user_npub));
+    const pendingNpubs = (links ?? [])
+      .filter((l) => l.status === "pending" && l.user_npub === myNpub)
+      .map((l) => l.friend_npub);
 
-    if (npubs.length === 0) {
+    const wanted = Array.from(new Set([...acceptedNpubs, ...pendingNpubs]));
+    if (wanted.length === 0) {
       setContacts([]);
+      setOutgoing([]);
       return;
     }
     const { data: profiles } = await supabase
       .from("profiles")
       .select("*")
-      .in("npub", npubs);
-    setContacts((profiles ?? []) as Profile[]);
+      .in("npub", wanted);
+    const byNpub = new Map(
+      ((profiles ?? []) as Profile[]).map((p) => [p.npub, p]),
+    );
+    setContacts(
+      acceptedNpubs
+        .map((n) => byNpub.get(n))
+        .filter((p): p is Profile => Boolean(p)),
+    );
+    setOutgoing(
+      pendingNpubs
+        .map((n) => byNpub.get(n))
+        .filter((p): p is Profile => Boolean(p)),
+    );
   }, [myNpub]);
 
   useEffect(() => {
@@ -84,6 +95,20 @@ export function useContacts(myNpub: string | null) {
           { user_npub: myNpub, friend_npub: targetNpub, status: "pending" },
           { onConflict: "user_npub,friend_npub" },
         );
+      await load();
+    },
+    [myNpub, load],
+  );
+
+  const cancelRequest = useCallback(
+    async (targetNpub: string) => {
+      if (!myNpub) return;
+      await supabase
+        .from("friends")
+        .delete()
+        .eq("user_npub", myNpub)
+        .eq("friend_npub", targetNpub)
+        .eq("status", "pending");
       await load();
     },
     [myNpub, load],
@@ -139,10 +164,12 @@ export function useContacts(myNpub: string | null) {
         .delete()
         .eq("user_npub", npub)
         .eq("friend_npub", myNpub);
-      await supabase.from("friends").upsert(
-        { user_npub: myNpub, friend_npub: npub, status: "blocked" },
-        { onConflict: "user_npub,friend_npub" },
-      );
+      await supabase
+        .from("friends")
+        .upsert(
+          { user_npub: myNpub, friend_npub: npub, status: "blocked" },
+          { onConflict: "user_npub,friend_npub" },
+        );
       await load();
     },
     [myNpub, load],
@@ -165,6 +192,7 @@ export function useContacts(myNpub: string | null) {
     outgoing,
     reload: load,
     sendRequest,
+    cancelRequest,
     acceptRequest,
     declineRequest,
     removeFriend,

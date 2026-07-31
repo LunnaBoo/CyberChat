@@ -11,7 +11,14 @@ ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 RUN bun run build
 
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Upstream Supabase API for the same-origin proxy. Bake it in at build time so
+# proxy_pass is static (no nginx resolver needed). Defaults to the local CLI.
+ARG SUPABASE_PROXY_PASS=http://localhost:54321
+ENV SUPABASE_PROXY_PASS=$SUPABASE_PROXY_PASS
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 COPY --from=build /app/dist/client /usr/share/nginx/html
+RUN envsubst '${SUPABASE_PROXY_PASS}' \
+    < /etc/nginx/conf.d/default.conf.template \
+    > /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

@@ -5,7 +5,7 @@ import { displayName } from "@/lib/nostr";
 export function FriendRequests() {
   const { contacts } = useApp();
   const [open, setOpen] = useState(false);
-  const count = contacts.requests.length;
+  const count = contacts.requests.length + contacts.outgoing.length;
 
   if (count === 0) return null;
 
@@ -20,29 +20,52 @@ export function FriendRequests() {
           {count}
         </span>
       </button>
-      {open &&
-        contacts.requests.map((r) => (
-          <div key={r.id} className="px-2 py-0.5">
-            <div className="flex items-center gap-1">
-              <span>{r.avatar_sigil}</span>
-              <span className="truncate">{displayName(r)}</span>
+      {open && (
+        <div>
+          {contacts.requests.map((r) => (
+            <div key={r.id} className="px-2 py-0.5">
+              <div className="flex items-center gap-1">
+                <span>{r.avatar_sigil}</span>
+                <span className="truncate">{displayName(r)}</span>
+              </div>
+              <div className="flex gap-2 text-xs">
+                <button
+                  onClick={() => void contacts.acceptRequest(r.id, r.user_npub)}
+                  className="text-muted-foreground hover:underline"
+                >
+                  [accept]
+                </button>
+                <button
+                  onClick={() => void contacts.declineRequest(r.id)}
+                  className="text-destructive hover:underline"
+                >
+                  [decline]
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2 text-xs">
-              <button
-                onClick={() => void contacts.acceptRequest(r.id, r.user_npub)}
-                className="text-muted-foreground hover:underline"
-              >
-                [accept]
-              </button>
-              <button
-                onClick={() => void contacts.declineRequest(r.id)}
-                className="text-destructive hover:underline"
-              >
-                [decline]
-              </button>
+          ))}
+          {contacts.outgoing.length > 0 && (
+            <div>
+              <div className="bg-surface px-2 text-xs text-dim">── SENT ──</div>
+              {contacts.outgoing.map((o) => (
+                <div
+                  key={o.npub}
+                  className="flex items-center gap-1 px-2 py-0.5"
+                >
+                  <span>{o.avatar_sigil}</span>
+                  <span className="truncate">{displayName(o)}</span>
+                  <button
+                    onClick={() => void contacts.cancelRequest(o.npub)}
+                    className="ml-auto text-xs text-destructive hover:underline"
+                  >
+                    [cancel]
+                  </button>
+                </div>
+              ))}
             </div>
-          </div>
-        ))}
+          )}
+        </div>
+      )}
     </div>
   );
 }

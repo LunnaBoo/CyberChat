@@ -16,22 +16,26 @@ local Supabase instance (Postgres + Realtime).
 | `bun run lint` | ESLint |
 | `bun run format` | Prettier (writes to disk) |
 | `supabase start` | Start local Supabase (Postgres + Realtime on :54321) |
-| `supabase db push` | Apply migrations in `supabase/migrations/` |
-| `supabase db reset` | Reset DB and re-apply migrations + seeds |
+| `supabase db push` | Apply migrations in `supabase/migrations/` (defaults to the linked remote project if any; use `supabase db push --local` for the local instance) |
+| `supabase db reset` | Reset local DB and re-apply migrations + seeds |
 | `supabase status` | Show local connection strings / anon key |
 | `supabase gen types typescript --local > src/integrations/supabase/types.ts` | Regenerate typed DB client |
-| `docker build -t cyberchat .` | Build the nginx SPA image (pass Supabase env vars as `--build-arg`) |
+| `bun scripts/trinity-bot.mjs` | Test bot (trinity): auto-replies to DMs, echoes nudges, auto-accepts friend requests — talks straight to local Supabase on :54321 |
+| `docker build -t cyberchat .` | Build the nginx SPA image (pass Supabase keys + `SUPABASE_PROXY_PASS` as `--build-arg`) |
 | `docker run -p 8080:80 cyberchat` | Run the Docker image |
 
 Always run `bun run lint` after changing code. Do not run `format` across the
-whole repo (it rewrites everything); format only changed files if needed.
+whole repo (it rewrites everything); format only changed files if needed. Note
+that repo-wide `bun run lint` currently reports pre-existing errors in the
+unused `src/components/ui/*` boilerplate and `scripts/trinity-bot.mjs`; lint
+the files you changed rather than trusting the full-repo exit code.
 
 ## Environment
 
 Copy `.env.example` to `.env` and fill in values from `supabase status`:
 
 ```
-VITE_SUPABASE_URL=http://localhost:54321
+VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=<anon-or-publishable-key>
 VITE_SUPABASE_ANON_KEY=<anon-key>
 ```
@@ -39,6 +43,14 @@ VITE_SUPABASE_ANON_KEY=<anon-key>
 The Supabase client (`src/integrations/supabase/client.ts`) accepts both
 `VITE_SUPABASE_ANON_KEY` and `VITE_SUPABASE_PUBLISHABLE_KEY` (it prefers the
 publishable key). Use whichever your local `supabase status` reports.
+
+`VITE_SUPABASE_URL` empty (or `auto`) makes the client use its own origin and
+reach Supabase through a **same-origin proxy** (Vite dev server in dev, nginx
+in the Docker build). This avoids cross-origin CORS preflights and ngrok's
+free-tier browser interstitial (`ERR_NGROK_6024`), which silently breaks
+browser REST calls to an ngrok'd Supabase. In dev the proxy targets the local
+instance (`vite.config.ts` → `http://127.0.0.1:54321`); set an explicit URL in
+`.env` to talk cross-origin instead (e.g. hosted Supabase).
 
 ## Architecture
 
@@ -65,7 +77,8 @@ src/
 ├── lib/                     # nostr.ts, types.ts, utils.ts
 ├── routes/                  # TanStack Router: __root.tsx, index.tsx (mounts App)
 ├── stores/                  # authStore.ts (identity/profile), appStore.tsx (conversations/tabs/modals)
-└── integrations/supabase/   # client.ts, types.ts (regenerated types)
+├── integrations/supabase/   # client.ts, types.ts (regenerated types)
+└── scripts/                 # trinity-bot.mjs (dev/test bot, talks straight to local Supabase)
 ```
 
 ### Auth flow (all in `src/stores/authStore.ts` + `src/lib/nostr.ts`)
@@ -142,10 +155,15 @@ at the top of the file — use them to sign in during testing.
 - TypeScript strict; use types from `src/lib/types.ts` / regenerated Supabase types.
 - When changing the DB schema, write a new migration in `supabase/migrations/`
   (never edit applied ones) and regenerate `integrations/supabase/types.ts`.
+- SQL function parameters are shadowed by same-named columns in the function
+  body: `WHERE col = param` silently compares against the table column when a
+  joined table has a column with the same name. Qualify the reference as
+  `function_name.param` (see the `get_friend_requests` fix in
+  `20260731051000_*.sql`).
 
 ## Current status / open work
 
-All five agreed workstreams are complete:
+Completed so far:
 
 1. `supabase/seed.sql` — 4 test users (neo/trinity/morpheus/cipher), friendships,
    and a group so messaging is testable.
@@ -158,6 +176,28 @@ All five agreed workstreams are complete:
    publishable key.
 5. Docker — static SPA build (`spa: true`, `nitro: false`) served by
    `nginx:alpine` with `_shell.html` fallback.
+6. Same-origin Supabase proxy — `VITE_SUPABASE_URL=` (empty) default routes the
+   browser through `/rest`, `/realtime`, `/auth`, `/storage` on its own origin
+   (Vite in dev → `127.0.0.1:54321`, nginx in Docker via `SUPABASE_PROXY_PASS`).
+   Eliminates CORS preflights and ngrok's free-tier browser interstitial, the
+   root cause of silent sign-in/refresh/data failures.
+7. Auth persistence hardening — `App.tsx` no longer wipes the localStorage
+   vault on transient profile-fetch failures (shows `[retry]`/`[sign out]`
+   instead); `ProfileSetup` only runs when a profile is genuinely missing.
+   `AuthScreen` surfaces query errors; `ProfileSetup` falls back on duplicates;
+   `autoComplete="off"` on nsec/display-name inputs.
+8. Friend management — `get_friend_requests` RPC fixed (its `npub` parameter
+   was shadowed by the `npub` columns of the joined tables; qualified as
+   `get_friend_requests.npub` in `20260731051000_*.sql`). Incoming requests now
+   render in the sidebar, with accept/decline; outgoing requests show a SENT
+   section with `[cancel]`; search results in NewConversation gain a per-row
+   friend-state button (`friend`/`sent`/`incoming`/`add`).
+9. Trinity bot (`scripts/trinity-bot.mjs`) — auto-replies to DMs (after a
+   typing indicator), echoes nudges, and auto-accepts friend requests, so
+   add-friend and DM flows are testable end-to-end without a second human.
+10. Favicon — center-cropped square from an owner-supplied image, shipped as
+    `public/favicon.png` (512×512) + `public/favicon.ico`, referenced from
+    `src/routes/__root.tsx`.
 
 Open work if needed later: wire deploy hooks so `bun run build` regenerates
 Supabase types automatically; anything else the owner requests.

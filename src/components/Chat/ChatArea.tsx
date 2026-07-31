@@ -8,12 +8,13 @@ import { ConversationTabs } from "./ConversationTabs";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { TypingIndicator } from "./TypingIndicator";
+import type { Message } from "@/lib/types";
 
 export function ChatArea() {
   const { activeTab, conversations, openModal } = useApp();
   const { identity } = useAuth();
   const myNpub = identity?.npub ?? null;
-  const { messages } = useRealtimeMessages(activeTab);
+  const { messages, append } = useRealtimeMessages(activeTab);
   const { typingNpubs, ping, stop } = useTypingIndicator(activeTab, myNpub);
   const [shake, setShake] = useState(false);
   const lastNudge = useRef<string | null>(null);
@@ -32,12 +33,17 @@ export function ChatArea() {
   async function send(content: string, isNudge = false) {
     if (!activeTab || !myNpub) return;
     stop();
-    await supabase.from("messages").insert({
-      conversation_id: activeTab,
-      sender_npub: myNpub,
-      content,
-      is_nudge: isNudge,
-    });
+    const { data } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: activeTab,
+        sender_npub: myNpub,
+        content,
+        is_nudge: isNudge,
+      })
+      .select()
+      .single();
+    if (data) append(data as Message);
   }
 
   if (!activeTab || !myNpub) {
