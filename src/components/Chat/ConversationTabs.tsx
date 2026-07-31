@@ -32,7 +32,9 @@ export function ConversationTabs() {
               <span className="truncate">{conv?.title ?? "…"}</span>
             </button>
             {unread[id] ? (
-              <span className={active ? "text-background" : "text-accent"}>
+              <span
+                className={active ? "text-background" : "bloom text-accent"}
+              >
                 ({unread[id]})
               </span>
             ) : null}

@@ -81,7 +81,7 @@ export function ContactList({ filter }: { filter: string }) {
               <div className="ml-auto flex gap-1">
                 <button
                   onClick={() => void contacts.sendRequest(p.npub)}
-                  className="text-xs text-accent hover:underline"
+                  className="bloom text-xs text-accent hover:underline"
                 >
                   {contacts.outgoing.some((o) => o.npub === p.npub)
                     ? "sent"

@@ -44,7 +44,7 @@ export function Sidebar() {
             <span>▤</span>
             <span className="truncate">{g.title}</span>
             {unread[g.conversation.id] ? (
-              <span className="ml-auto text-xs text-accent">
+              <span className="bloom ml-auto text-xs text-accent">
                 ({unread[g.conversation.id]})
               </span>
             ) : null}

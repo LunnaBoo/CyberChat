@@ -6,8 +6,9 @@
 
 /*
  * CyberChat terminal design system.
- * Palette derived from cyberspace.online: matrix green on near-black.
+ * Palette: phosphor greens on near-black (cyberspace.online CRT look).
  * All values are oklch tokens; components must never hardcode colors.
+ * Highlights bloom against the dark background like a real CRT tube.
  */
 
 @theme inline {
@@ -50,17 +51,17 @@
 
 :root {
   --radius: 0px;
-  --background: oklch(0.158 0.011 145.1);
-  --panel: oklch(0.181 0.01 145.1);
-  --surface: oklch(0.209 0.015 145);
-  --foreground: oklch(0.869 0.278 144.5);
-  --primary: oklch(0.869 0.278 144.5);
-  --primary-foreground: oklch(0.158 0.011 145.1);
-  --muted-foreground: oklch(0.734 0.234 144.5);
-  --dim: oklch(0.459 0.144 145.1);
-  --accent: oklch(0.812 0.17 76.4);
-  --destructive: oklch(0.653 0.235 18.6);
-  --border: oklch(0.869 0.278 144.5 / 30%);
+  --background: oklch(0.11 0.02 144);
+  --panel: oklch(0.17 0.032 144);
+  --surface: oklch(0.22 0.04 144);
+  --foreground: oklch(0.96 0.26 144);
+  --primary: oklch(0.96 0.26 144);
+  --primary-foreground: oklch(0.11 0.02 144);
+  --muted-foreground: oklch(0.85 0.25 144);
+  --dim: oklch(0.68 0.19 144);
+  --accent: oklch(0.97 0.3 144);
+  --destructive: oklch(0.98 0.26 144);
+  --border: oklch(0.96 0.26 144 / 0.3);
 }
 
 @layer base {
@@ -68,6 +69,7 @@
     border-color: var(--color-border);
     border-radius: 0 !important;
     box-shadow: none !important;
+    text-shadow: 0 0 4px color-mix(in oklab, currentColor 40%, transparent);
   }
 
   html,
@@ -90,6 +92,7 @@
   ::selection {
     background: var(--color-foreground);
     color: var(--color-background);
+    text-shadow: 0 0 4px var(--color-background);
   }
 
   input,
@@ -113,36 +116,45 @@
   }
 }
 
-@utility scanlines {
+/* -- bloom ----------------------------------------------------------
+ * Every non-black color glows: text blooms in its own `currentColor`
+ * via the base `*` text-shadow (background/near-black stays dark so the
+ * glow is visible). Stronger highlights use `.bloom` / an automatic
+ * `.bg-foreground` filter glow. Bloom uses filter/text-shadow only;
+ * box-shadow stays forbidden. */
+
+@utility bloom {
+  filter: drop-shadow(0 0 1px currentColor)
+    drop-shadow(0 0 4px color-mix(in oklab, currentColor 45%, transparent));
+}
+
+.bg-foreground {
+  filter: drop-shadow(0 0 1px var(--color-foreground))
+    drop-shadow(0 0 4px color-mix(in oklab, var(--color-foreground) 45%, transparent));
+}
+
+/* ambient phosphor glow + vignette (replaces the old scanline overlay) */
+@utility crt-glow {
   position: relative;
 }
 
-.scanlines::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 60;
-  background: repeating-linear-gradient(
-    to bottom,
-    oklch(0.869 0.278 144.5 / 0.05) 0px,
-    oklch(0.869 0.278 144.5 / 0.05) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-}
-
-.scanlines::before {
+.crt-glow::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 59;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 55%,
-    oklch(0 0 0 / 0.45) 100%
-  );
+  background:
+    radial-gradient(
+      ellipse 85% 70% at 50% 45%,
+      oklch(0.96 0.26 144 / 0.06),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at center,
+      transparent 62%,
+      oklch(0 0 0 / 0.55) 100%
+    );
 }
 
 @keyframes cursor-blink {
@@ -158,6 +170,7 @@
 
 .cursor-blink {
   animation: cursor-blink 1s step-end infinite;
+  text-shadow: 0 0 8px var(--color-foreground);
 }
 
 @keyframes nudge-shake {
@@ -205,7 +218,7 @@
   }
   25%,
   75% {
-    background-color: oklch(0.869 0.278 144.5 / 0.12);
+    background-color: oklch(0.96 0.26 144 / 0.12);
   }
 }
 
@@ -229,7 +242,7 @@
 /* thin green scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.459 0.144 145.1) transparent;
+  scrollbar-color: oklch(0.68 0.19 144) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -242,9 +255,9 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.459 0.144 145.1);
+  background: oklch(0.68 0.19 144);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.734 0.234 144.5);
+  background: oklch(0.85 0.25 144);
 }

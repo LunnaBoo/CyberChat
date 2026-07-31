@@ -56,7 +56,7 @@ export function MessageInput({
       <button
         onClick={onNudge}
         title="send nudge"
-        className="border border-border px-1 text-accent hover:bg-accent hover:text-background"
+        className="bloom border border-border px-1 text-accent hover:bg-accent hover:text-background"
       >
         [nudge]
       </button>

@@ -116,17 +116,29 @@ These are hard rules from the product spec and follow-up decisions with the owne
 
 Enforced in `src/styles.css` and must be respected in new code:
 
-- Palette (Tailwind tokens): `background` near-black, `panel` darker green-gray,
-  `surface` input bg, `foreground` matrix green (`#00ff41`-ish), `dim` muted
-  green, `accent` yellow (`#ffb000`), `destructive` red (`#ff3355`).
+- Palette (Tailwind tokens): **green on black only** — `background` near-black,
+  `panel`/`surface` darker green-grays, `foreground` matrix green, `dim` muted
+  green, `accent` highlight green, `destructive` hot/whitish green (alarm).
+  No amber, no red, no blue.
 - Monospace everywhere (`--font-mono` / `--font-sans` both JetBrains Mono stack).
 - **Zero border-radius, zero box-shadow** (globally forced in CSS).
-- Thin green-tinted scrollbar (global).
-- CRT scanline + vignette overlay via `.scanlines` class on the root container.
+- **Bloom, not shadows** — all colored text bleeds a soft phosphor glow in its
+  own `currentColor` (global base `*` `text-shadow`); black/background stays
+  dark. Stronger highlights glow via `filter: drop-shadow` (never `box-shadow`):
+  - `.bg-foreground` (selected/inverted/active items) glows automatically.
+  - `.bloom` utility for `text-accent` highlights (nudge, friend-request header,
+    unread badges, +add links).
+  - `.cursor-blink` cursor glows; `::selection` glows.
+- Ambient phosphor glow + vignette via `.crt-glow` on the root container
+  (replaced the old scanline overlay).
 - Blinking cursor via `.cursor-blink`; nudge shake/flash via `.nudging`/`.nudging-flash`.
 - Dense, compact layout: tight padding (4-8px), borders as separators, avoid
   `gap-*` spacing utilities where borders + padding suffice.
 - Active/selected items use inverted colors (`bg-foreground text-background`).
+- **Avatar images are dithered** — profile pictures render as green-on-black
+  phosphor via the DitherSpace port in `src/lib/dither.ts` (Floyd-Steinberg /
+  Atkinson, `color-mix` mapped to theme colors). The `Avatar` component falls
+  back to the plain `<img>` when CORS/`canvas` taint blocks pixel reads.
 
 ## Database schema
 
@@ -204,6 +216,13 @@ Completed so far:
 10. Favicon — center-cropped square from an owner-supplied image, shipped as
     `public/favicon.png` (512×512) + `public/favicon.ico`, referenced from
     `src/routes/__root.tsx`.
+11. CRT visual overhaul — palette is green-only on near-black (amber and red
+    removed; `accent` is highlight green, `destructive` is hot/whitish alarm
+    green); scanlines replaced by `.crt-glow` ambient phosphor + vignette;
+    highlights bloom via `.bloom` utility and an automatic `.bg-foreground`
+    glow; profile pictures are dithered to green-on-black phosphor by the
+    DitherSpace port in `src/lib/dither.ts` (falls back to plain `<img>` when
+    CORS/canvas taint blocks pixel reads).
 
 Open work if needed later: wire deploy hooks so `bun run build` regenerates
 Supabase types automatically; anything else the owner requests.

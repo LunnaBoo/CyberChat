@@ -24,7 +24,7 @@ export function MessageBubble({
 
   if (message.is_nudge) {
     return (
-      <div className="px-2 py-0.5 text-center text-accent">
+      <div className="bloom px-2 py-0.5 text-center text-accent">
         * {self ? "you" : name} sent a NUDGE *
       </div>
     );
