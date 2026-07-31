@@ -5,6 +5,7 @@ export interface Profile {
   username: string;
   display_name: string | null;
   avatar_sigil: string | null;
+  avatar_url: string | null;
   status_message: string | null;
   status: PresenceStatus;
   last_seen: string | null;
@@ -48,6 +49,7 @@ export interface FriendRequest {
   username: string;
   display_name: string | null;
   avatar_sigil: string | null;
+  avatar_url: string | null;
   created_at: string | null;
 }
 
@@ -56,6 +58,7 @@ export interface ConversationSummary {
   participants: Profile[];
   title: string;
   sigil: string;
+  avatarUrl: string | null;
 }
 
 export const STATUS_DOT: Record<PresenceStatus, string> = {

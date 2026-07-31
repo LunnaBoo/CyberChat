@@ -117,7 +117,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             : displayName(others[0] ?? null);
         const sigil =
           c.type === "group" ? "▤" : (others[0]?.avatar_sigil ?? "◆");
-        return { conversation: c, participants: members, title, sigil };
+        return {
+          conversation: c,
+          participants: members,
+          title,
+          sigil,
+          avatarUrl:
+            c.type === "group" ? null : (others[0]?.avatar_url ?? null),
+        };
       })
       .sort((a, b) => a.title.localeCompare(b.title));
 

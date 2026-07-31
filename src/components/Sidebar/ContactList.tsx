@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { displayName } from "@/lib/nostr";
+import { handleOf } from "@/lib/username";
+import { Avatar } from "@/components/Avatar";
 import { ContactItem } from "./ContactItem";
 import { STATUS_LABEL, type PresenceStatus, type Profile } from "@/lib/types";
 
@@ -15,6 +17,7 @@ export function ContactList({ filter }: { filter: string }) {
     (c) =>
       !query ||
       c.npub.toLowerCase().includes(query) ||
+      (c.username ?? "").toLowerCase().includes(query) ||
       (c.display_name ?? "").toLowerCase().includes(query),
   );
 
@@ -56,7 +59,8 @@ export function ContactList({ filter }: { filter: string }) {
 
       {list.length === 0 && !query && (
         <div className="px-2 py-1 text-xs text-dim">
-          no contacts yet. search a name or npub above to add someone.
+          no contacts yet. search a name, @username or npub above to add
+          someone.
         </div>
       )}
 
@@ -67,8 +71,13 @@ export function ContactList({ filter }: { filter: string }) {
           </div>
           {strangers.map((p) => (
             <div key={p.npub} className="flex items-center gap-1 px-2 py-0.5">
-              <span>{p.avatar_sigil}</span>
-              <span className="truncate">{displayName(p)}</span>
+              <Avatar url={p.avatar_url} sigil={p.avatar_sigil} />
+              <span className="truncate">
+                {displayName(p)}
+                {handleOf(p) && (
+                  <span className="ml-1 text-xs text-dim">{handleOf(p)}</span>
+                )}
+              </span>
               <div className="ml-auto flex gap-1">
                 <button
                   onClick={() => void contacts.sendRequest(p.npub)}

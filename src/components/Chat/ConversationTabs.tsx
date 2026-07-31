@@ -1,4 +1,5 @@
 import { useApp } from "@/stores/appStore";
+import { Avatar } from "@/components/Avatar";
 
 export function ConversationTabs() {
   const {
@@ -25,9 +26,10 @@ export function ConversationTabs() {
           >
             <button
               onClick={() => openConversation(id)}
-              className="max-w-40 truncate"
+              className="flex max-w-40 items-center gap-1 truncate"
             >
-              {conv?.sigil} {conv?.title ?? "…"}
+              <Avatar url={conv?.avatarUrl} sigil={conv?.sigil} />
+              <span className="truncate">{conv?.title ?? "…"}</span>
             </button>
             {unread[id] ? (
               <span className={active ? "text-background" : "text-accent"}>

@@ -1,5 +1,7 @@
 import { useApp } from "@/stores/appStore";
 import { displayName, shortNpub } from "@/lib/nostr";
+import { handleOf } from "@/lib/username";
+import { Avatar } from "@/components/Avatar";
 import { ModalFrame } from "./ModalFrame";
 import { STATUS_DOT } from "@/lib/types";
 
@@ -14,9 +16,20 @@ export function UserProfile({ npub }: { npub: string }) {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-3xl">{profile.avatar_sigil}</span>
+            <Avatar
+              url={profile.avatar_url}
+              sigil={profile.avatar_sigil}
+              className="text-3xl"
+            />
             <div>
-              <div>{displayName(profile)}</div>
+              <div>
+                {displayName(profile)}
+                {handleOf(profile) && (
+                  <span className="ml-1 text-xs text-dim">
+                    {handleOf(profile)}
+                  </span>
+                )}
+              </div>
               <div className="text-xs text-muted-foreground">
                 {shortNpub(profile.npub)} · {STATUS_DOT[profile.status]}{" "}
                 {profile.status}

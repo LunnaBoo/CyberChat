@@ -68,7 +68,7 @@ instance (`vite.config.ts` → `http://127.0.0.1:54321`); set an explicit URL in
 src/
 ├── App.tsx                  # boot → auth → main flow
 ├── components/
-│   ├── BootScreen, AuthScreen, MainLayout, ProfileSetup, TerminalContainer
+│   ├── BootScreen, AuthScreen, MainLayout, ProfileSetup, TerminalContainer, Avatar
 │   ├── Sidebar/             # UserBadge, SearchBar, ContactList, ContactItem, FriendRequests
 │   ├── Chat/                # ChatArea, ConversationTabs, MessageList, MessageBubble, MessageInput, TypingIndicator
 │   ├── Modals/              # NewConversation, Settings, UserProfile, CommandPalette, ModalFrame
@@ -92,18 +92,24 @@ src/
 
 These are hard rules from the product spec and follow-up decisions with the owner:
 
-1. **Username IS the npub.** The `profiles.username` column stores the user's
-   Nostr public key (`npub1...`), NOT a custom handle. Custom handles do not
-   exist. Display names are non-unique and free-form.
+1. **npub is the identity key; username is a custom @handle.** Auth, friends,
+   and conversations are all keyed by `profiles.npub`. `profiles.username` is a
+   unique, lowercase custom handle (`@neo`, 3-20 chars: `[a-z][a-z0-9_]*`,
+   letter-first) used for search and the directory. Legacy accounts created
+   before handles exist keep their npub as `username` until they change it in
+   Settings — they keep working, and no `@handle` is rendered for them until
+   they set one. Display names are non-unique and free-form.
 2. **No emojis, ever.** The app is a text-based terminal TUI. No emoji in code,
-   UI, or default data. Avatars use text sigils (`◆ ◇ ■ □ ▣ ▪ ▫ ▲ △ ● ○ ★`).
-   This also means: never use emoji in commit messages, comments, or docs.
+   UI, or default data. Avatars default to text sigils
+   (`◆ ◇ ■ □ ▣ ▪ ▫ ▲ △ ● ○ ★`); a user may optionally set a profile picture via
+   `profiles.avatar_url` (an http(s) image URL, rendered instead of the sigil by
+   the `Avatar` component). This also means: never use emoji in commit messages,
+   comments, or docs.
 3. **Display names fall back to truncated npub.** When a user has no display
    name, show `shortNpub(npub)` (e.g. `npub1abcde…fghi`) from `src/lib/nostr.ts`.
-4. **Search matches npub AND display_name.** `search_users` RPC must search
-   `npub ILIKE` and `display_name ILIKE` (username column holds the npub, so it
-   is covered by the npub match). Search by display name is fuzzy by design
-   since names are non-unique.
+4. **Search matches npub, username AND display_name.** `search_users` RPC must
+   search `npub ILIKE`, `username ILIKE` and `display_name ILIKE`. Search by
+   display name is fuzzy by design since names are non-unique.
 5. **Terminal aesthetic only** — see style rules below.
 
 ## Styling rules (cyberspace.online terminal aesthetic)
@@ -126,7 +132,7 @@ Enforced in `src/styles.css` and must be respected in new code:
 
 All tables keyed by `npub`. See `supabase/migrations/` for the authoritative SQL.
 
-- `profiles(npub PK, username UNIQUE, display_name, avatar_sigil, status_message, status CHECK, last_seen, created_at)`
+- `profiles(npub PK, username UNIQUE, display_name, avatar_sigil, avatar_url, status_message, status CHECK, last_seen, created_at)`
 - `friends(id, user_npub, friend_npub, status pending/accepted/blocked, UNIQUE(user_npub, friend_npub))`
 - `conversations(id, type dm/group, name)`
 - `conversation_participants(conversation_id, user_npub, last_read_at, PK(conversation_id, user_npub))`

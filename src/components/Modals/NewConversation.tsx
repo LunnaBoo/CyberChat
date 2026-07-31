@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { displayName, shortNpub } from "@/lib/nostr";
+import { handleOf } from "@/lib/username";
+import { Avatar } from "@/components/Avatar";
 import { ModalFrame } from "./ModalFrame";
 import type { Profile } from "@/lib/types";
 
@@ -54,7 +56,7 @@ export function NewConversation() {
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="search by name or npub..."
+          placeholder="search by name, @username or npub..."
           className="w-full"
         />
       </div>
@@ -86,10 +88,10 @@ export function NewConversation() {
                 }`}
               >
                 <span>{on ? "[x]" : "[ ]"}</span>
-                <span>{p.avatar_sigil}</span>
+                <Avatar url={p.avatar_url} sigil={p.avatar_sigil} />
                 <span className="truncate">{displayName(p)}</span>
                 <span className="ml-auto text-xs opacity-60">
-                  {shortNpub(p.npub)}
+                  {handleOf(p) ?? shortNpub(p.npub)}
                 </span>
               </button>
               <button

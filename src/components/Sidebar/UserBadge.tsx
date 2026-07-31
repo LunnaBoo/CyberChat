@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { useAuth } from "@/stores/authStore";
 import { displayName } from "@/lib/nostr";
+import { handleOf } from "@/lib/username";
+import { Avatar } from "@/components/Avatar";
 import { STATUS_DOT, type PresenceStatus } from "@/lib/types";
 
 const STATUSES: PresenceStatus[] = ["online", "idle", "busy", "offline"];
@@ -18,7 +20,7 @@ export function UserBadge() {
   return (
     <div className="border-b border-border px-2 py-1">
       <div className="flex items-center gap-1">
-        <span>{me.avatar_sigil}</span>
+        <Avatar url={me.avatar_url} sigil={me.avatar_sigil} />
         <span className="truncate">{displayName(me)}</span>
         <div className="relative ml-auto">
           <button
@@ -76,6 +78,7 @@ export function UserBadge() {
         </button>
       )}
       <div className="truncate text-xs text-dim">
+        {handleOf(me) ? `${handleOf(me)} · ` : ""}
         {identity?.method === "extension" ? "nip-07" : "local key"} ·{" "}
         {me.npub.slice(0, 14)}…
       </div>

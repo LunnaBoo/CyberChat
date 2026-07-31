@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { displayName } from "@/lib/nostr";
+import { Avatar } from "@/components/Avatar";
 import { STATUS_DOT, type Profile } from "@/lib/types";
 
 export function ContactItem({ contact }: { contact: Profile }) {
@@ -24,7 +25,7 @@ export function ContactItem({ contact }: { contact: Profile }) {
         >
           {STATUS_DOT[contact.status]}
         </span>
-        <span>{contact.avatar_sigil}</span>
+        <Avatar url={contact.avatar_url} sigil={contact.avatar_sigil} />
         <span className="truncate">{displayName(contact)}</span>
         {contact.status_message && (
           <span className="ml-1 truncate text-xs opacity-60">

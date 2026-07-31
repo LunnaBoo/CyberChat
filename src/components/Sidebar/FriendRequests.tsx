@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { displayName } from "@/lib/nostr";
+import { handleOf } from "@/lib/username";
+import { Avatar } from "@/components/Avatar";
 
 export function FriendRequests() {
   const { contacts } = useApp();
@@ -25,8 +27,13 @@ export function FriendRequests() {
           {contacts.requests.map((r) => (
             <div key={r.id} className="px-2 py-0.5">
               <div className="flex items-center gap-1">
-                <span>{r.avatar_sigil}</span>
-                <span className="truncate">{displayName(r)}</span>
+                <Avatar url={r.avatar_url} sigil={r.avatar_sigil} />
+                <span className="truncate">
+                  {displayName(r)}
+                  {handleOf(r) && (
+                    <span className="ml-1 text-xs text-dim">{handleOf(r)}</span>
+                  )}
+                </span>
               </div>
               <div className="flex gap-2 text-xs">
                 <button
@@ -52,8 +59,15 @@ export function FriendRequests() {
                   key={o.npub}
                   className="flex items-center gap-1 px-2 py-0.5"
                 >
-                  <span>{o.avatar_sigil}</span>
-                  <span className="truncate">{displayName(o)}</span>
+                  <Avatar url={o.avatar_url} sigil={o.avatar_sigil} />
+                  <span className="truncate">
+                    {displayName(o)}
+                    {handleOf(o) && (
+                      <span className="ml-1 text-xs text-dim">
+                        {handleOf(o)}
+                      </span>
+                    )}
+                  </span>
                   <button
                     onClick={() => void contacts.cancelRequest(o.npub)}
                     className="ml-auto text-xs text-destructive hover:underline"

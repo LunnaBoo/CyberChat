@@ -8,6 +8,7 @@ import { ConversationTabs } from "./ConversationTabs";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { TypingIndicator } from "./TypingIndicator";
+import { Avatar } from "@/components/Avatar";
 import type { Message } from "@/lib/types";
 
 export function ChatArea() {
@@ -75,8 +76,9 @@ export function ChatArea() {
     >
       <ConversationTabs />
       <div className="flex items-center gap-1 border-b border-border px-2 py-0.5 text-xs text-muted-foreground">
-        <span>
-          {conv?.sigil} {conv?.title}
+        <span className="flex items-center gap-1">
+          <Avatar url={conv?.avatarUrl} sigil={conv?.sigil} />
+          {conv?.title}
         </span>
         <span className="ml-auto text-dim">
           {conv?.conversation.type === "group"

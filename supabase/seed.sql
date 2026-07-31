@@ -1,5 +1,5 @@
 -- CyberChat seed data
--- Test identities (username = npub per design rule #1)
+-- Test identities (username = @handle per design; npub is the identity key)
 --
 --   neo      nsec1pxvdnl0jmanqar4t8fv0x0me3x0st69rl0eup65plzt9vcps2nzqpg04nn
 --            npub13qx368xtcvutd83t574wh3qn3uhwdkvv49hp7ypuyejsh9vtfznq2swdju
@@ -11,10 +11,10 @@
 --            npub1u38pw3r9p7w0xe4dreumx0zngt9tjrd43laz4s3cc8qs26rjduwqmf9w5d
 
 INSERT INTO public.profiles (npub, username, display_name, avatar_sigil, status_message, status) VALUES
-  ('npub13qx368xtcvutd83t574wh3qn3uhwdkvv49hp7ypuyejsh9vtfznq2swdju', 'npub13qx368xtcvutd83t574wh3qn3uhwdkvv49hp7ypuyejsh9vtfznq2swdju', 'neo', '◆', 'the one', 'online'),
-  ('npub107whj74v3egyew339f0ppzlstzacvy7u979s25rcfydmxzsflpqqkatgzu', 'npub107whj74v3egyew339f0ppzlstzacvy7u979s25rcfydmxzsflpqqkatgzu', 'trinity', '◇', 'hacking the grid', 'online'),
-  ('npub10wh9dqcdxlsek7apd9cn2lzh326h2erugf0lhe98022l2wa3xvcq0wsa6l', 'npub10wh9dqcdxlsek7apd9cn2lzh326h2erugf0lhe98022l2wa3xvcq0wsa6l', 'morpheus', '■', 'free your mind', 'idle'),
-  ('npub1u38pw3r9p7w0xe4dreumx0zngt9tjrd43laz4s3cc8qs26rjduwqmf9w5d', 'npub1u38pw3r9p7w0xe4dreumx0zngt9tjrd43laz4s3cc8qs26rjduwqmf9w5d', 'cipher', '▲', 'i know the rules', 'offline');
+  ('npub13qx368xtcvutd83t574wh3qn3uhwdkvv49hp7ypuyejsh9vtfznq2swdju', 'neo', 'neo', '◆', 'the one', 'online'),
+  ('npub107whj74v3egyew339f0ppzlstzacvy7u979s25rcfydmxzsflpqqkatgzu', 'trinity', 'trinity', '◇', 'hacking the grid', 'online'),
+  ('npub10wh9dqcdxlsek7apd9cn2lzh326h2erugf0lhe98022l2wa3xvcq0wsa6l', 'morpheus', 'morpheus', '■', 'free your mind', 'idle'),
+  ('npub1u38pw3r9p7w0xe4dreumx0zngt9tjrd43laz4s3cc8qs26rjduwqmf9w5d', 'cipher', 'cipher', '▲', 'i know the rules', 'offline');
 
 INSERT INTO public.friends (user_npub, friend_npub, status) VALUES
   ('npub13qx368xtcvutd83t574wh3qn3uhwdkvv49hp7ypuyejsh9vtfznq2swdju', 'npub107whj74v3egyew339f0ppzlstzacvy7u979s25rcfydmxzsflpqqkatgzu', 'accepted'),
