@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApp } from "@/stores/appStore";
+import { displayName } from "@/lib/nostr";
 import { STATUS_DOT, type Profile } from "@/lib/types";
 
 export function ContactItem({ contact }: { contact: Profile }) {
@@ -23,10 +24,8 @@ export function ContactItem({ contact }: { contact: Profile }) {
         >
           {STATUS_DOT[contact.status]}
         </span>
-        <span>{contact.avatar_emoji}</span>
-        <span className="truncate">
-          {contact.display_name ?? contact.username}
-        </span>
+        <span>{contact.avatar_sigil}</span>
+        <span className="truncate">{displayName(contact)}</span>
         {contact.status_message && (
           <span className="ml-1 truncate text-xs opacity-60">
             — {contact.status_message}

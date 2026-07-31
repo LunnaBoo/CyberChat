@@ -3,9 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Identity } from "@/lib/nostr";
 import { shortNpub } from "@/lib/nostr";
 import { authStore } from "@/stores/authStore";
-import type { Profile } from "@/lib/types";
-
-const EMOJI = ["👤", "🐧", "👾", "🤖", "💀", "🦊", "🐙", "🌵", "🛰", "🧿"];
+import { SIGILS, type Profile } from "@/lib/types";
 
 export function ProfileSetup({
   identity,
@@ -14,35 +12,27 @@ export function ProfileSetup({
   identity: Identity;
   onCancel: () => void;
 }) {
-  const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [emoji, setEmoji] = useState("👤");
+  const [sigil, setSigil] = useState(SIGILS[0]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit() {
-    const handle = username.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!/^[a-z0-9_]{3,20}$/.test(handle)) {
-      setError("username must be 3-20 chars: a-z 0-9 _");
-      return;
-    }
     setBusy(true);
     const { data, error: err } = await supabase
       .from("profiles")
       .insert({
         npub: identity.npub,
-        username: handle,
-        display_name: displayName.trim() || handle,
-        avatar_emoji: emoji,
+        username: identity.npub,
+        display_name: displayName.trim() || shortNpub(identity.npub),
+        avatar_sigil: sigil,
         status: "online",
       })
       .select()
       .single();
     setBusy(false);
     if (err) {
-      setError(
-        err.code === "23505" ? "that username is taken" : err.message,
-      );
+      setError(err.message);
       return;
     }
     authStore.signIn(identity);
@@ -57,17 +47,9 @@ export function ProfileSetup({
         </div>
         <div className="mb-2 text-dim">key {shortNpub(identity.npub)}</div>
 
-        <Field label="username">
-          <input
-            autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="neo"
-            className="w-full"
-          />
-        </Field>
         <Field label="display name">
           <input
+            autoFocus
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Thomas A."
@@ -75,19 +57,19 @@ export function ProfileSetup({
           />
         </Field>
         <div className="mb-2">
-          <div className="text-muted-foreground">avatar</div>
+          <div className="text-muted-foreground">avatar sigil</div>
           <div className="flex flex-wrap gap-1 pt-1">
-            {EMOJI.map((e) => (
+            {SIGILS.map((s) => (
               <button
-                key={e}
-                onClick={() => setEmoji(e)}
+                key={s}
+                onClick={() => setSigil(s)}
                 className={`border px-1.5 ${
-                  emoji === e
+                  sigil === s
                     ? "border-foreground bg-foreground text-background"
                     : "border-border"
                 }`}
               >
-                {e}
+                {s}
               </button>
             ))}
           </div>

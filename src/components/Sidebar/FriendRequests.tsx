@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useApp } from "@/stores/appStore";
+import { displayName } from "@/lib/nostr";
 
 export function FriendRequests() {
   const { contacts } = useApp();
@@ -23,8 +24,8 @@ export function FriendRequests() {
         contacts.requests.map((r) => (
           <div key={r.id} className="px-2 py-0.5">
             <div className="flex items-center gap-1">
-              <span>{r.avatar_emoji}</span>
-              <span className="truncate">{r.display_name ?? r.username}</span>
+              <span>{r.avatar_sigil}</span>
+              <span className="truncate">{displayName(r)}</span>
             </div>
             <div className="flex gap-2 text-xs">
               <button

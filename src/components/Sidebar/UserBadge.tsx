@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { useAuth } from "@/stores/authStore";
+import { displayName } from "@/lib/nostr";
 import { STATUS_DOT, type PresenceStatus } from "@/lib/types";
 
 const STATUSES: PresenceStatus[] = ["online", "idle", "busy", "offline"];
@@ -17,8 +18,8 @@ export function UserBadge() {
   return (
     <div className="border-b border-border px-2 py-1">
       <div className="flex items-center gap-1">
-        <span>{me.avatar_emoji}</span>
-        <span className="truncate">{me.display_name ?? me.username}</span>
+        <span>{me.avatar_sigil}</span>
+        <span className="truncate">{displayName(me)}</span>
         <div className="relative ml-auto">
           <button
             onClick={() => setOpen((v) => !v)}

@@ -5,7 +5,6 @@ import {
   extensionNpub,
   hasExtension,
   npubFromNsec,
-  shortNpub,
   type Identity,
 } from "@/lib/nostr";
 import { authStore } from "@/stores/authStore";
@@ -80,7 +79,9 @@ export function AuthScreen() {
   }
 
   if (pending) {
-    return <ProfileSetup identity={pending} onCancel={() => setPending(null)} />;
+    return (
+      <ProfileSetup identity={pending} onCancel={() => setPending(null)} />
+    );
   }
 
   return (
@@ -200,9 +201,7 @@ export function AuthScreen() {
         </div>
 
         {extension && mode === "menu" && (
-          <div className="mt-2 text-dim">
-            extension detected — {shortNpub("npub1extension")}
-          </div>
+          <div className="mt-2 text-dim">NIP-07 extension detected</div>
         )}
       </div>
 

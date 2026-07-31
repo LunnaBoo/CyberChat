@@ -1,0 +1,11 @@
+node_modules
+dist
+.output
+.wrangler
+.vite
+supabase/.temp
+supabase/.branches
+*.log
+.env
+.env.*
+!.env.example

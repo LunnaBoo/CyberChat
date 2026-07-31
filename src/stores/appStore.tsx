@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { displayName } from "@/lib/nostr";
 import { useContacts } from "@/hooks/useContacts";
 import { authStore, useAuth } from "@/stores/authStore";
 import type {
@@ -110,10 +111,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const title =
           c.type === "group"
             ? (c.name ?? "group")
-            : (others[0]?.display_name ?? others[0]?.username ?? "unknown");
-        const emoji =
-          c.type === "group" ? "▤" : (others[0]?.avatar_emoji ?? "👤");
-        return { conversation: c, participants: members, title, emoji };
+            : displayName(others[0] ?? null);
+        const sigil =
+          c.type === "group" ? "▤" : (others[0]?.avatar_sigil ?? "◆");
+        return { conversation: c, participants: members, title, sigil };
       })
       .sort((a, b) => a.title.localeCompare(b.title));
 
@@ -127,15 +128,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // unread counts + global message feed
   useEffect(() => {
     if (!myNpub) return;
-    void supabase.rpc("get_unread_counts", { npub: myNpub }).then(({ data }) => {
-      const map: Record<string, number> = {};
-      ((data ?? []) as { conversation_id: string; unread: number }[]).forEach(
-        (r) => {
-          if (r.unread > 0) map[r.conversation_id] = Number(r.unread);
-        },
-      );
-      setUnread(map);
-    });
+    void supabase
+      .rpc("get_unread_counts", { npub: myNpub })
+      .then(({ data }) => {
+        const map: Record<string, number> = {};
+        ((data ?? []) as { conversation_id: string; unread: number }[]).forEach(
+          (r) => {
+            if (r.unread > 0) map[r.conversation_id] = Number(r.unread);
+          },
+        );
+        setUnread(map);
+      });
 
     const channel = supabase
       .channel("global-messages")

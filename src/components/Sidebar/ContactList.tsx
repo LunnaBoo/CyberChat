@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/stores/appStore";
+import { displayName } from "@/lib/nostr";
 import { ContactItem } from "./ContactItem";
 import { STATUS_LABEL, type PresenceStatus, type Profile } from "@/lib/types";
 
@@ -13,7 +14,7 @@ export function ContactList({ filter }: { filter: string }) {
   const list = contacts.contacts.filter(
     (c) =>
       !query ||
-      c.username.toLowerCase().includes(query) ||
+      c.npub.toLowerCase().includes(query) ||
       (c.display_name ?? "").toLowerCase().includes(query),
   );
 
@@ -55,7 +56,7 @@ export function ContactList({ filter }: { filter: string }) {
 
       {list.length === 0 && !query && (
         <div className="px-2 py-1 text-xs text-dim">
-          no contacts yet. search a username above to add someone.
+          no contacts yet. search a name or npub above to add someone.
         </div>
       )}
 
@@ -66,8 +67,8 @@ export function ContactList({ filter }: { filter: string }) {
           </div>
           {strangers.map((p) => (
             <div key={p.npub} className="flex items-center gap-1 px-2 py-0.5">
-              <span>{p.avatar_emoji}</span>
-              <span className="truncate">{p.display_name ?? p.username}</span>
+              <span>{p.avatar_sigil}</span>
+              <span className="truncate">{displayName(p)}</span>
               <div className="ml-auto flex gap-1">
                 <button
                   onClick={() => void contacts.sendRequest(p.npub)}

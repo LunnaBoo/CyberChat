@@ -2,23 +2,20 @@ import { useState } from "react";
 import { useApp } from "@/stores/appStore";
 import { useAuth } from "@/stores/authStore";
 import { ModalFrame } from "./ModalFrame";
-
-const EMOJI = ["👤", "🐧", "👾", "🤖", "💀", "🦊", "🐙", "🌵", "🛰", "🧿", "🕶", "🔮"];
+import { SIGILS } from "@/lib/types";
 
 export function Settings() {
   const { me, updateProfile, closeModal } = useApp();
   const { identity } = useAuth();
-  const [username, setUsername] = useState(me?.username ?? "");
   const [displayName, setDisplayName] = useState(me?.display_name ?? "");
-  const [emoji, setEmoji] = useState(me?.avatar_emoji ?? "👤");
+  const [sigil, setSigil] = useState(me?.avatar_sigil ?? SIGILS[0]);
   const [saved, setSaved] = useState(false);
   const [revealKey, setRevealKey] = useState(false);
 
   async function save() {
     await updateProfile({
-      username: username.trim().toLowerCase().replace(/\s+/g, "_"),
       display_name: displayName.trim(),
-      avatar_emoji: emoji,
+      avatar_sigil: sigil,
     });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1500);
@@ -27,13 +24,6 @@ export function Settings() {
   return (
     <ModalFrame title="SETTINGS" onClose={closeModal}>
       <div className="space-y-2">
-        <Row label="username">
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full"
-          />
-        </Row>
         <Row label="display name">
           <input
             value={displayName}
@@ -42,19 +32,19 @@ export function Settings() {
           />
         </Row>
         <div>
-          <div className="text-muted-foreground">avatar</div>
+          <div className="text-muted-foreground">avatar sigil</div>
           <div className="flex flex-wrap gap-1 pt-1">
-            {EMOJI.map((e) => (
+            {SIGILS.map((s) => (
               <button
-                key={e}
-                onClick={() => setEmoji(e)}
+                key={s}
+                onClick={() => setSigil(s)}
                 className={`border px-1.5 ${
-                  emoji === e
+                  sigil === s
                     ? "border-foreground bg-foreground text-background"
                     : "border-border"
                 }`}
               >
-                {e}
+                {s}
               </button>
             ))}
           </div>

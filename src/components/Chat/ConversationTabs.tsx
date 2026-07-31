@@ -23,8 +23,11 @@ export function ConversationTabs() {
               active ? "bg-foreground text-background" : "text-muted-foreground"
             }`}
           >
-            <button onClick={() => openConversation(id)} className="max-w-40 truncate">
-              {conv?.emoji} {conv?.title ?? "…"}
+            <button
+              onClick={() => openConversation(id)}
+              className="max-w-40 truncate"
+            >
+              {conv?.sigil} {conv?.title ?? "…"}
             </button>
             {unread[id] ? (
               <span className={active ? "text-background" : "text-accent"}>
@@ -35,7 +38,7 @@ export function ConversationTabs() {
               onClick={() => closeTab(id)}
               className="opacity-60 hover:opacity-100"
             >
-              ✕
+              x
             </button>
           </div>
         );

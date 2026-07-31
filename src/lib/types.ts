@@ -4,7 +4,7 @@ export interface Profile {
   npub: string;
   username: string;
   display_name: string | null;
-  avatar_emoji: string | null;
+  avatar_sigil: string | null;
   status_message: string | null;
   status: PresenceStatus;
   last_seen: string | null;
@@ -47,7 +47,7 @@ export interface FriendRequest {
   user_npub: string;
   username: string;
   display_name: string | null;
-  avatar_emoji: string | null;
+  avatar_sigil: string | null;
   created_at: string | null;
 }
 
@@ -55,7 +55,7 @@ export interface ConversationSummary {
   conversation: Conversation;
   participants: Profile[];
   title: string;
-  emoji: string;
+  sigil: string;
 }
 
 export const STATUS_DOT: Record<PresenceStatus, string> = {
@@ -71,3 +71,18 @@ export const STATUS_LABEL: Record<PresenceStatus, string> = {
   busy: "BUSY",
   offline: "OFFLINE",
 };
+
+export const SIGILS = [
+  "◆",
+  "◇",
+  "■",
+  "□",
+  "▣",
+  "▪",
+  "▫",
+  "▲",
+  "△",
+  "●",
+  "○",
+  "★",
+];

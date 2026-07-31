@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/stores/appStore";
+import { displayName, shortNpub } from "@/lib/nostr";
 import { ModalFrame } from "./ModalFrame";
 import type { Profile } from "@/lib/types";
 
@@ -38,7 +39,7 @@ export function NewConversation() {
       await startDm(selected[0].npub);
     } else {
       await createGroup(
-        groupName.trim() || selected.map((s) => s.username).join("+"),
+        groupName.trim() || selected.map((s) => displayName(s)).join("+"),
         selected.map((s) => s.npub),
       );
     }
@@ -48,12 +49,12 @@ export function NewConversation() {
   return (
     <ModalFrame title="NEW CONVERSATION" onClose={closeModal}>
       <div className="mb-2 flex items-center gap-1 border border-border bg-surface px-2 py-1">
-        <span className="text-dim">🔍</span>
+        <span className="text-dim">/?</span>
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="search users by username..."
+          placeholder="search by name or npub..."
           className="w-full"
         />
       </div>
@@ -73,9 +74,11 @@ export function NewConversation() {
               }`}
             >
               <span>{on ? "[x]" : "[ ]"}</span>
-              <span>{p.avatar_emoji}</span>
-              <span className="truncate">{p.display_name ?? p.username}</span>
-              <span className="ml-auto text-xs opacity-60">@{p.username}</span>
+              <span>{p.avatar_sigil}</span>
+              <span className="truncate">{displayName(p)}</span>
+              <span className="ml-auto text-xs opacity-60">
+                {shortNpub(p.npub)}
+              </span>
             </button>
           );
         })}

@@ -11,5 +11,11 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // SPA mode: ship a static client shell (dist/client/_shell.html) instead of an SSR server.
+    // The app does all data/auth on the client (Supabase + localStorage), so no SSR is needed.
+    // This is what makes the nginx Docker deployment possible.
+    spa: { enabled: true },
   },
+  // The app is a pure client-side SPA; there is no nitro server runtime to deploy.
+  nitro: false,
 });

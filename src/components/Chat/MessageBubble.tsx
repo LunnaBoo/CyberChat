@@ -1,4 +1,5 @@
 import { useApp } from "@/stores/appStore";
+import { displayName } from "@/lib/nostr";
 import type { Message, Profile } from "@/lib/types";
 
 function pad(n: number) {
@@ -19,12 +20,12 @@ export function MessageBubble({
   const { openModal } = useApp();
   const d = new Date(message.created_at);
   const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const name = sender?.username ?? "unknown";
+  const name = displayName(sender);
 
   if (message.is_nudge) {
     return (
       <div className="px-2 py-0.5 text-center text-accent">
-        ⚡ {self ? "you" : name} sent a NUDGE ⚡
+        * {self ? "you" : name} sent a NUDGE *
       </div>
     );
   }

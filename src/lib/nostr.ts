@@ -1,8 +1,4 @@
-import {
-  generateSecretKey,
-  getPublicKey,
-  nip19,
-} from "nostr-tools";
+import { generateSecretKey, getPublicKey, nip19 } from "nostr-tools";
 
 export interface Identity {
   npub: string;
@@ -54,6 +50,19 @@ export function isValidNsec(nsec: string): boolean {
 export function shortNpub(npub: string): string {
   if (npub.length <= 16) return npub;
   return `${npub.slice(0, 10)}…${npub.slice(-6)}`;
+}
+
+export interface Nameable {
+  npub?: string | null;
+  user_npub?: string | null;
+  display_name?: string | null;
+}
+
+export function displayName(p: Nameable | null | undefined): string {
+  if (!p) return "unknown";
+  const key = p.npub ?? p.user_npub;
+  if (!key) return "unknown";
+  return p.display_name ?? shortNpub(key);
 }
 
 /* ---------------- NIP-07 ---------------- */

@@ -3,7 +3,7 @@ CREATE TABLE public.profiles (
   npub TEXT PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   display_name TEXT,
-  avatar_emoji TEXT DEFAULT '👤',
+  avatar_sigil TEXT DEFAULT '◆',
   status_message TEXT DEFAULT '',
   status TEXT DEFAULT 'offline' CHECK (status IN ('online','idle','busy','offline')),
   last_seen TIMESTAMPTZ DEFAULT NOW(),
@@ -98,14 +98,14 @@ END; $$;
 CREATE OR REPLACE FUNCTION public.search_users(query TEXT)
 RETURNS SETOF public.profiles LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT * FROM profiles
-  WHERE username ILIKE '%' || query || '%' OR display_name ILIKE '%' || query || '%'
-  ORDER BY username LIMIT 25;
+  WHERE npub ILIKE '%' || query || '%' OR display_name ILIKE '%' || query || '%'
+  ORDER BY display_name LIMIT 25;
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_friend_requests(npub TEXT)
-RETURNS TABLE (id UUID, user_npub TEXT, username TEXT, display_name TEXT, avatar_emoji TEXT, created_at TIMESTAMPTZ)
+RETURNS TABLE (id UUID, user_npub TEXT, username TEXT, display_name TEXT, avatar_sigil TEXT, created_at TIMESTAMPTZ)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT f.id, f.user_npub, p.username, p.display_name, p.avatar_emoji, f.created_at
+  SELECT f.id, f.user_npub, p.username, p.display_name, p.avatar_sigil, f.created_at
   FROM friends f JOIN profiles p ON p.npub = f.user_npub
   WHERE f.friend_npub = npub AND f.status = 'pending'
   ORDER BY f.created_at DESC;

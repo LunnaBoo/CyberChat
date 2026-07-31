@@ -1,4 +1,5 @@
 import { useApp } from "@/stores/appStore";
+import { displayName, shortNpub } from "@/lib/nostr";
 import { ModalFrame } from "./ModalFrame";
 import { STATUS_DOT } from "@/lib/types";
 
@@ -13,11 +14,11 @@ export function UserProfile({ npub }: { npub: string }) {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-3xl">{profile.avatar_emoji}</span>
+            <span className="text-3xl">{profile.avatar_sigil}</span>
             <div>
-              <div>{profile.display_name ?? profile.username}</div>
+              <div>{displayName(profile)}</div>
               <div className="text-xs text-muted-foreground">
-                @{profile.username} · {STATUS_DOT[profile.status]}{" "}
+                {shortNpub(profile.npub)} · {STATUS_DOT[profile.status]}{" "}
                 {profile.status}
               </div>
             </div>

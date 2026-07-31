@@ -1,0 +1,13 @@
+node_modules
+dist
+.output
+.wrangler
+.vite
+supabase/.temp
+supabase/.branches
+.env
+.env.*
+!.env.example
+*.log
+.git
+.gitignore
