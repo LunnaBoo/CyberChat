@@ -150,7 +150,7 @@ export function AuthScreen() {
                   [{reveal ? "hide" : "show"}]
                 </button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <TermButton onClick={handleImport} disabled={busy}>
                   {busy ? "verifying..." : "sign in"}
                 </TermButton>
@@ -173,7 +173,7 @@ export function AuthScreen() {
               <div className="break-all border border-border bg-surface px-2 py-1">
                 {generated.nsec}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <TermButton
                   onClick={() => {
                     void navigator.clipboard.writeText(generated.nsec);

@@ -1,4 +1,4 @@
-type DitherAlgorithm = "floyd-steinberg" | "atkinson";
+type DitherAlgorithm = "bayer" | "floyd-steinberg" | "atkinson";
 
 export type DitherOptions = {
   size?: number;
@@ -6,16 +6,20 @@ export type DitherOptions = {
   bitDepth?: number;
   contrast?: number;
   ditherAmount?: number;
+  pixelSize?: number;
+  gamma?: number;
   fg?: string;
   bg?: string;
 };
 
 const DEFAULT_OPTIONS: Required<DitherOptions> = {
   size: 28,
-  algorithm: "floyd-steinberg",
-  bitDepth: 3,
-  contrast: 1.5,
-  ditherAmount: 0.85,
+  algorithm: "bayer",
+  bitDepth: 2,
+  contrast: 1,
+  ditherAmount: 0.75,
+  pixelSize: 4,
+  gamma: 0.625,
   fg: "var(--color-foreground)",
   bg: "var(--color-background)",
 };
@@ -24,11 +28,26 @@ function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
-function cssVar(name: string, fallback: string): string {
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-  return value || fallback;
+function resolveVarRGB(name: string): [number, number, number] | null {
+  const probe = document.createElement("span");
+  probe.style.color = `var(${name})`;
+  document.body.appendChild(probe);
+  try {
+    const resolved = getComputedStyle(probe).color;
+    const c = document.createElement("canvas");
+    c.width = 1;
+    c.height = 1;
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = resolved;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2]];
+  } catch {
+    return null;
+  } finally {
+    probe.remove();
+  }
 }
 
 function toGray(data: Uint8ClampedArray, contrast: number): Float32Array {
@@ -39,6 +58,56 @@ function toGray(data: Uint8ClampedArray, contrast: number): Float32Array {
     gray[j] = clamp01((g - 0.5) * contrast + 0.5);
   }
   return gray;
+}
+
+// Stretch luminance to the full [0,1] range so dark avatars don't render as a
+// nearly-blank background-colored square (cyberspace.online-style phosphor
+// needs the subject to punch through).
+function normalizeGray(gray: Float32Array) {
+  let min = 1;
+  let max = 0;
+  for (let i = 0; i < gray.length; i++) {
+    if (gray[i] < min) min = gray[i];
+    if (gray[i] > max) max = gray[i];
+  }
+  if (max - min < 1e-4) return;
+  const span = max - min;
+  for (let i = 0; i < gray.length; i++) {
+    gray[i] = (gray[i] - min) / span;
+  }
+}
+
+const BAYER_8X8 = [
+  0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36,
+  14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41,
+  51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23,
+  61, 29, 53, 21,
+];
+
+function fractSin(x: number, y: number): number {
+  const dot = x * 0.129898 + y * 0.78233;
+  const v = Math.sin(dot) * 43758.5453123;
+  return v - Math.floor(v);
+}
+
+function bayerPass(
+  gray: Float32Array,
+  w: number,
+  h: number,
+  opts: Required<DitherOptions>,
+) {
+  const levels = Math.pow(2, opts.bitDepth);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      const bayerValue = BAYER_8X8[(y % 8) * 8 + (x % 8)] / 64;
+      const noise = fractSin(x, y) * 0.1;
+      const bayer = bayerValue * 0.7 + noise * 0.3;
+      const threshold = 0.5 + (bayer - 0.5) * opts.ditherAmount;
+      const v = clamp01(gray[idx]);
+      gray[idx] = clamp01(Math.floor(v * levels + (1 - threshold)) / levels);
+    }
+  }
 }
 
 function ditherPass(
@@ -152,36 +221,49 @@ export function ditherImage(
   const edge = Math.min(sw, sh);
   const sx = (sw - edge) / 2;
   const sy = (sh - edge) / 2;
-  sctx.drawImage(img, sx, sy, edge, edge, 0, 0, size, size);
+
+  if (opts.algorithm === "bayer") {
+    const block = Math.max(1, Math.round(opts.pixelSize));
+    const grid = Math.max(1, Math.round(size / block));
+    const sample = document.createElement("canvas");
+    sample.width = grid;
+    sample.height = grid;
+    const sctx2 = sample.getContext("2d");
+    if (!sctx2) throw new Error("2d context unavailable");
+    sctx2.drawImage(img, sx, sy, edge, edge, 0, 0, grid, grid);
+    sctx.imageSmoothingEnabled = false;
+    sctx.drawImage(sample, 0, 0, size, size);
+  } else {
+    sctx.drawImage(img, sx, sy, edge, edge, 0, 0, size, size);
+  }
 
   const imageData = sctx.getImageData(0, 0, size, size);
   const gray = toGray(imageData.data, opts.contrast);
-  ditherPass(gray, size, size, opts);
-
-  const supportsColorMix =
-    typeof CSS.supports === "function" &&
-    CSS.supports("color", "color-mix(in oklab, red 50%, blue)");
-
-  if (!supportsColorMix) {
-    const out = sctx.createImageData(size, size);
+  normalizeGray(gray);
+  if (opts.gamma !== 1) {
     for (let i = 0; i < gray.length; i++) {
-      const v = Math.floor(clamp01(gray[i]) * 255);
-      out.data[i * 4] = v;
-      out.data[i * 4 + 1] = v;
-      out.data[i * 4 + 2] = v;
-      out.data[i * 4 + 3] = 255;
+      gray[i] = Math.pow(gray[i], opts.gamma);
     }
-    sctx.putImageData(out, 0, 0);
-    return src;
   }
 
-  const fg = cssVar("--color-foreground", opts.fg);
-  const bg = cssVar("--color-background", opts.bg);
-  for (let i = 0; i < gray.length; i++) {
-    const pct = Math.round(clamp01(gray[i]) * 100);
-    sctx.fillStyle = `color-mix(in oklab, ${bg} ${100 - pct}%, ${fg} ${pct}%)`;
-    sctx.fillRect(i % size, Math.floor(i / size), 1, 1);
+  if (opts.algorithm === "bayer") {
+    bayerPass(gray, size, size, opts);
+  } else {
+    ditherPass(gray, size, size, opts);
   }
+
+  const fg = resolveVarRGB(opts.fg) ?? [150, 255, 170];
+  const bg = resolveVarRGB(opts.bg) ?? [8, 12, 10];
+  const out = sctx.createImageData(size, size);
+  for (let i = 0; i < gray.length; i++) {
+    const t = clamp01(gray[i]);
+    const j = i * 4;
+    out.data[j] = Math.round(bg[0] + (fg[0] - bg[0]) * t);
+    out.data[j + 1] = Math.round(bg[1] + (fg[1] - bg[1]) * t);
+    out.data[j + 2] = Math.round(bg[2] + (fg[2] - bg[2]) * t);
+    out.data[j + 3] = 255;
+  }
+  sctx.putImageData(out, 0, 0);
 
   return src;
 }

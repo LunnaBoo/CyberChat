@@ -33,7 +33,7 @@ export function MessageInput({
   }
 
   return (
-    <div className="flex items-start gap-1 border-t border-border bg-panel px-2 py-1">
+    <div className="flex items-start gap-1 border-t border-border bg-panel px-2 pb-[max(env(safe-area-inset-bottom),4px)] pt-1">
       <span className="pt-0.5 text-foreground">&gt;</span>
       <textarea
         ref={ref}

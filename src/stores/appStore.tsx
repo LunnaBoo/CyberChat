@@ -68,7 +68,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [modal, setModal] = useState<ModalKind>({ kind: "none" });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () =>
+      typeof window === "undefined" ||
+      window.matchMedia("(min-width: 768px)").matches,
+  );
   const reloadInFlight = useRef<Promise<void> | null>(null);
   const openingDm = useRef<string | null>(null);
 

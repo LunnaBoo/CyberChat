@@ -5,6 +5,51 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { Plugin } from "vite";
+
+// Same-origin image proxy for avatars: browsers can't read pixels from
+// cross-origin images that lack Access-Control-Allow-Origin (canvas taint),
+// so the dither would silently fall back to the plain <img>. Serving avatar
+// URLs through our own /img endpoint makes every image same-origin and
+// dither-able. Mirrored in nginx.conf for the Docker build. The client sends
+// /img/<percent-encoded url> with the scheme's :// kept literal.
+function imageProxyPlugin(): Plugin {
+  return {
+    name: "cyberchat-image-proxy",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url || !req.url.startsWith("/img/")) return next();
+        const target = decodeURIComponent(req.url.slice("/img/".length));
+        if (!/^https?:\/\//i.test(target)) {
+          res.statusCode = 400;
+          res.end("bad url");
+          return;
+        }
+        fetch(target, { headers: { "user-agent": "cyberchat" } })
+          .then((upstream) => {
+            if (!upstream.ok) {
+              res.statusCode = upstream.status;
+              res.end();
+              return;
+            }
+            const ctype =
+              upstream.headers.get("content-type") ??
+              "application/octet-stream";
+            return upstream.arrayBuffer().then((buf) => {
+              res.statusCode = 200;
+              res.setHeader("Content-Type", ctype);
+              res.setHeader("Cache-Control", "public, max-age=3600");
+              res.end(Buffer.from(buf));
+            });
+          })
+          .catch(() => {
+            res.statusCode = 502;
+            res.end();
+          });
+      });
+    },
+  };
+}
 
 export default defineConfig({
   tanstackStart: {
@@ -19,6 +64,7 @@ export default defineConfig({
   // The app is a pure client-side SPA; there is no nitro server runtime to deploy.
   nitro: false,
   vite: {
+    plugins: [imageProxyPlugin()],
     server: {
       // Allow ngrok's random *.ngrok-free.app host header through the dev server
       // (Vite 8 rejects unknown hosts by default).

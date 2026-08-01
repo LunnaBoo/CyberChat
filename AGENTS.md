@@ -52,6 +52,17 @@ browser REST calls to an ngrok'd Supabase. In dev the proxy targets the local
 instance (`vite.config.ts` → `http://127.0.0.1:54321`); set an explicit URL in
 `.env` to talk cross-origin instead (e.g. hosted Supabase).
 
+Profile-picture URLs also go through the same-origin proxy as
+`/img/<percent-encoded url>` with the scheme's `://` kept literal
+(e.g. `/img/https://host/path%3Fquery`) — Vite middleware in dev, a regex
+`location ~* ^/img/https?://.+$` in `nginx.conf`. The browser can then read
+avatar pixels for dithering even when the upstream sends no CORS headers.
+The proxy only accepts `http(s)` targets (an SSRF guard); it does not require
+Supabase and works regardless of `VITE_SUPABASE_URL`. Note: nginx keeps the
+literal `//` in the scheme because `merge_slashes off` is set at server level
+(it is not valid in a `location` block), and it decodes the encoded rest via
+`$uri` since query args (`$arg_*`) are NOT percent-decoded.
+
 ## Architecture
 
 - **React 19 + Vite + TypeScript**, built on **TanStack Start/Start Router** in
@@ -136,9 +147,16 @@ Enforced in `src/styles.css` and must be respected in new code:
   `gap-*` spacing utilities where borders + padding suffice.
 - Active/selected items use inverted colors (`bg-foreground text-background`).
 - **Avatar images are dithered** — profile pictures render as green-on-black
-  phosphor via the DitherSpace port in `src/lib/dither.ts` (Floyd-Steinberg /
-  Atkinson, `color-mix` mapped to theme colors). The `Avatar` component falls
-  back to the plain `<img>` when CORS/`canvas` taint blocks pixel reads.
+  phosphor via the DitherSpace port in `src/lib/dither.ts` (Bayer 8x8 ordered
+  dither by default — cyberspace.online's look: `pixelSize 4`, `bitDepth 2`,
+  `ditherAmount 0.75`; Floyd-Steinberg/Atkinson also available). Luminance is
+  auto-normalized (min-max stretch) then gamma-lifted (`gamma 0.625` default)
+  so dark photos still render as visible green-on-black instead of a blank
+  green square. Colors map to
+  the theme tokens. Avatars load through the same-origin `/img/<encoded url>` proxy
+  (Vite middleware in dev, nginx in Docker) so the browser can read pixels
+  from any upstream regardless of its CORS policy; the `Avatar` component
+  falls back to the plain `<img>` if the proxy fails.
 
 ## Database schema
 
@@ -223,6 +241,19 @@ Completed so far:
     glow; profile pictures are dithered to green-on-black phosphor by the
     DitherSpace port in `src/lib/dither.ts` (falls back to plain `<img>` when
     CORS/canvas taint blocks pixel reads).
+12. Mobile responsive layout — `<768px`: sidebar becomes an off-canvas overlay
+    drawer (fixed left panel, solid `bg-background` backdrop so the chat behind
+    is fully hidden, `[menu]` button in the header) and auto-closes when a
+    conversation is opened; root container is `h-dvh` with
+    `viewport-fit=cover` + safe-area padding on header/drawer/input so the
+    terminal fits under notch/home-indicator and the mobile URL bar; modals
+    scroll internally and sit closer to the top; message bubbles cap at 75%
+    width; the shortcut footer is hidden on mobile. Desktop (`md:`) is
+    unchanged. `sidebarOpen` defaults to closed on mobile via `matchMedia`;
+    the drawer auto-opens once on the first mobile visit (localStorage
+    `cyberchat.menuIntro` flag) to teach the `[menu]` button. `html` sets
+    `-webkit-text-size-adjust/text-size-adjust: 100%` so Android font-boosting
+    can't inflate terminal ASCII/`pre` blocks and blow out the layout.
 
 Open work if needed later: wire deploy hooks so `bun run build` regenerates
 Supabase types automatically; anything else the owner requests.

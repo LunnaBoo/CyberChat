@@ -20,12 +20,19 @@ export function Avatar({
 
   const canImg = Boolean(url && isHttpUrl(url));
 
+  // Same-origin proxy URL (Vite middleware / nginx): percent-encode the whole
+  // URL but keep the scheme's :// literal, because nginx collapses encoded
+  // slashes in the scheme (https%3A%2F%2F -> https:/) and can't decode query
+  // args. $uri in nginx then decodes the rest cleanly.
+  const proxySrc = url
+    ? `/img/${encodeURIComponent(url).replace("%3A%2F%2F", "://")}`
+    : null;
+
   useEffect(() => {
-    if (!canImg || mode !== "dither") return;
+    if (!canImg || mode !== "dither" || !url || !proxySrc) return;
     let alive = true;
     const canvas = canvasRef.current;
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.onload = () => {
       if (!alive || canvasRef.current !== canvas) return;
       try {
@@ -36,17 +43,17 @@ export function Avatar({
         if (!ctx) throw new Error("no 2d context");
         ctx.drawImage(dithered, 0, 0);
       } catch {
-        setMode("plain");
+        if (alive) setMode("plain");
       }
     };
     img.onerror = () => {
       if (alive) setMode("plain");
     };
-    img.src = url;
+    img.src = proxySrc;
     return () => {
       alive = false;
     };
-  }, [canImg, url, mode]);
+  }, [canImg, url, mode, proxySrc]);
 
   if (!canImg || mode === "sigil") {
     return (

@@ -20,13 +20,13 @@ export function ConversationTabs() {
         return (
           <div
             key={id}
-            className={`flex shrink-0 items-center gap-1 border-r border-border px-2 py-0.5 ${
+            className={`flex shrink-0 items-center gap-1 border-r border-border px-1.5 py-1 md:px-2 md:py-0.5 ${
               active ? "bg-foreground text-background" : "text-muted-foreground"
             }`}
           >
             <button
               onClick={() => openConversation(id)}
-              className="flex max-w-40 items-center gap-1 truncate"
+              className="flex max-w-28 items-center gap-1 truncate md:max-w-40"
             >
               <Avatar url={conv?.avatarUrl} sigil={conv?.sigil} />
               <span className="truncate">{conv?.title ?? "…"}</span>
@@ -49,7 +49,7 @@ export function ConversationTabs() {
       })}
       <button
         onClick={() => openModal({ kind: "new-conversation" })}
-        className="shrink-0 px-2 py-0.5 text-dim hover:bg-foreground hover:text-background"
+        className="shrink-0 px-2 py-1 text-dim hover:bg-foreground hover:text-background md:py-0.5"
       >
         [+]
       </button>

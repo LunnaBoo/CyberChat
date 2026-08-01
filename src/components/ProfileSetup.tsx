@@ -108,7 +108,7 @@ export function ProfileSetup({
   }
 
   return (
-    <div className="flex h-full items-center justify-center px-4">
+    <div className="flex h-full items-start justify-center overflow-y-auto px-4 py-4 md:items-center">
       <div className="w-full max-w-lg border border-border bg-panel p-3">
         <div className="mb-2 border-b border-border pb-1">
           ┌─ NEW OPERATOR REGISTRATION ─┐

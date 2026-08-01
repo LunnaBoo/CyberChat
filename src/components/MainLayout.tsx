@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/stores/appStore";
 import { authStore, useAuth } from "@/stores/authStore";
@@ -65,13 +65,44 @@ export function MainLayout() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [openModal, closeModal, toggleSidebar, cycleTab, activeTab, closeTab, lock]);
+  }, [
+    openModal,
+    closeModal,
+    toggleSidebar,
+    cycleTab,
+    activeTab,
+    closeTab,
+    lock,
+  ]);
+
+  const prevTab = useRef(activeTab);
+  useEffect(() => {
+    if (prevTab.current === activeTab) return;
+    prevTab.current = activeTab;
+    if (window.matchMedia("(max-width: 767px)").matches && sidebarOpen) {
+      toggleSidebar();
+    }
+  }, [activeTab, sidebarOpen, toggleSidebar]);
+
+  useEffect(() => {
+    if (window.matchMedia("(min-width: 768px)").matches) return;
+    if (localStorage.getItem("cyberchat.menuIntro") === "1") return;
+    localStorage.setItem("cyberchat.menuIntro", "1");
+    if (!sidebarOpen) toggleSidebar();
+  }, [sidebarOpen, toggleSidebar]);
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-2 border-b border-border bg-panel px-2 py-0.5">
+      <header className="flex items-center gap-2 border-b border-border bg-panel px-2 pb-0.5 pt-[max(env(safe-area-inset-top),2px)]">
+        <button
+          onClick={toggleSidebar}
+          aria-label="toggle sidebar"
+          className="md:hidden hover:bg-foreground hover:text-background"
+        >
+          [menu]
+        </button>
         <span className="text-foreground">●</span>
-        <span>CyberChat v0.1.0</span>
+        <span className="hidden sm:inline">CyberChat v0.1.0</span>
         <div className="ml-auto flex gap-2 text-muted-foreground">
           <button
             onClick={() => void lock()}
@@ -90,16 +121,28 @@ export function MainLayout() {
 
       <div className="flex min-h-0 flex-1">
         {sidebarOpen && (
-          <aside className="w-64 shrink-0 md:w-72">
-            <Sidebar />
-          </aside>
+          <div
+            className="fixed inset-0 z-30 bg-background md:hidden"
+            onClick={toggleSidebar}
+          />
         )}
+        <aside
+          className={[
+            "fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-panel pb-[env(safe-area-inset-bottom)] transition-all",
+            "md:static md:z-auto md:w-72 md:pb-0",
+            sidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full invisible md:hidden",
+          ].join(" ")}
+        >
+          <Sidebar />
+        </aside>
         <main className="min-w-0 flex-1">
           <ChatArea />
         </main>
       </div>
 
-      <footer className="border-t border-border px-2 text-xs text-dim">
+      <footer className="hidden border-t border-border px-2 text-xs text-dim md:block">
         CTRL+K commands · CTRL+N new · CTRL+W close tab · CTRL+D sidebar ·
         CTRL+L lock
       </footer>
@@ -107,7 +150,9 @@ export function MainLayout() {
       {modal.kind === "new-conversation" && <NewConversation />}
       {modal.kind === "settings" && <Settings />}
       {modal.kind === "profile" && <UserProfile npub={modal.npub} />}
-      {modal.kind === "palette" && <CommandPalette onLock={() => void lock()} />}
+      {modal.kind === "palette" && (
+        <CommandPalette onLock={() => void lock()} />
+      )}
     </div>
   );
 }

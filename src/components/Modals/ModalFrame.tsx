@@ -19,7 +19,7 @@ export function ModalFrame({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-background/80 pt-24"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/80 px-2 py-6 md:py-24"
       onMouseDown={onClose}
     >
       <div
@@ -27,8 +27,11 @@ export function ModalFrame({
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b border-border px-2 py-0.5">
-          <span>┌─ {title}</span>
-          <button onClick={onClose} className="ml-auto text-dim hover:text-foreground">
+          <span className="truncate">┌─ {title}</span>
+          <button
+            onClick={onClose}
+            className="ml-auto shrink-0 text-dim hover:text-foreground"
+          >
             [esc]
           </button>
         </div>

@@ -101,6 +101,11 @@ Supabase through **its own origin**:
 - **Docker**: nginx proxies the same paths to `SUPABASE_PROXY_PASS`, baked in
   at build time via `envsubst`.
 
+Avatar profile pictures go through the proxy too, as `/img/<percent-encoded
+url>` with the scheme kept literal (Vite middleware in dev, an nginx regex
+`location` in Docker) so the browser can read pixels for dithering even when
+the upstream sends no CORS headers. Only `http(s)` targets are accepted.
+
 So the only URL the browser ever hits is the app's own origin. If you want to
 talk to a hosted Supabase instead, set `VITE_SUPABASE_URL` explicitly.
 
@@ -112,20 +117,21 @@ ngrok URL. Use one stable URL while testing.
 
 ## 6. Sharing the app (ngrok)
 
-Two tunnels are used while developing:
+One tunnel, for the app:
 
 ```sh
 ngrok http 8080    # the APP — this is the URL you share and open in a browser
-ngrok http 54321   # the Supabase API tunnel — for API debugging only, NOT used by the app
 ```
 
 ngrok free URLs rotate every time the process restarts. Current app URL (as of
-the last run): `https://fc77-177-125-125-223.ngrok-free.app` — check with
-`curl http://127.0.0.1:4041/api/tunnels` (port 4041 is the app tunnel's agent
-API; 4040 is the Supabase one).
+the last run): `https://7bf2-177-125-125-223.ngrok-free.app` — check with
+`curl http://127.0.0.1:4040/api/tunnels` (port 4040 is the app tunnel's agent
+API).
 
-Never point the browser at the `ngrok http 54321` URL for app traffic — that is
-the exact setup that hits the interstitial.
+Do NOT also run an `ngrok http 54321` tunnel for Supabase at the same time: two
+free-tier agents on one host conflict (`ERR_NGROK_8012`) and can take the app
+tunnel down. The app reaches Supabase through its own origin (section 5), so a
+Supabase tunnel is never needed.
 
 ---
 

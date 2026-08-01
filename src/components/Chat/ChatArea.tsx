@@ -51,11 +51,11 @@ export function ChatArea() {
     return (
       <div className="flex h-full flex-col">
         <ConversationTabs />
-        <div className="flex flex-1 flex-col items-center justify-center text-dim">
-          <pre className="text-xs leading-tight">{`   ╔══════════════════════════╗
-   ║  NO ACTIVE CHANNEL       ║
-   ╚══════════════════════════╝`}</pre>
-          <div className="mt-2">
+        <div className="flex flex-1 flex-col items-center justify-center overflow-hidden px-2 text-dim">
+          <pre className="max-w-full text-[10px] leading-tight md:text-xs">{`   ╔══════════════════════════════╗
+   ║    NO ACTIVE CHANNEL         ║
+   ╚══════════════════════════════╝`}</pre>
+          <div className="mt-2 text-center">
             pick a contact on the left, or{" "}
             <button
               onClick={() => openModal({ kind: "new-conversation" })}
