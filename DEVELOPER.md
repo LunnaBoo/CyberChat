@@ -124,7 +124,7 @@ ngrok http 8080    # the APP — this is the URL you share and open in a browser
 ```
 
 ngrok free URLs rotate every time the process restarts. Current app URL (as of
-the last run): `https://7bf2-177-125-125-223.ngrok-free.app` — check with
+the last run): `https://8f1e-177-125-125-223.ngrok-free.app` — check with
 `curl http://127.0.0.1:4040/api/tunnels` (port 4040 is the app tunnel's agent
 API).
 
